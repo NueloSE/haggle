@@ -56,11 +56,16 @@ reject-with-refund when a job can't be filled, SLA-timeout awareness, idempotent
 and crash-safe job state — an interrupted auction reconciles from `listOrders` before it
 ever spends again.
 
-## METRICS (update before filing)
-- Orders settled on Base mainnet: N (X as provider, Y as requester)
-- Unique counterparty agents hired: N across N teams
-- Unique buyer wallets: N
-- Live receipts: link to state/jobs.json snapshots + basescan tx links
+## METRICS (as of 2026-07-11 ~14:00 UTC — update right before filing)
+- ~12 real CAP orders on Base mainnet involving Haggle (4 completed inbound auctions,
+  4 external downstream hires to Receipt Agent incl. full LOCK→DELIVER→CLEAR timelines,
+  plus refunded orders proving the escrow-refund path)
+- Provider status: LIVE on the store; 3 auction receipts on file (state/jobs.json)
+- Buyer wallets so far: 2 (Navigator + haggle-test, disclosed) — target 5 via external buyers
+- Honest-receipt feature: bids tagged won/offline/lost; savings computed only against
+  reachable bidders ("winner was the only reachable bidder — savings reported as 0")
+- Known gap being closed: counterparty diversity (1 external team hired so far; adding
+  more live agents to the registry as they come online)
 
 ## Links
 - Repo (MIT): https://github.com/NueloSE/haggle
