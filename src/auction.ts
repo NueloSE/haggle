@@ -9,6 +9,22 @@ const AWARD_TIMEOUT_GRACE_MS = 60_000; // extra wait beyond provider SLA before 
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+/** Retry a call through transient network drops (flaky wifi, socket resets). API errors pass through. */
+async function withRetry<T>(fn: () => Promise<T>, label: string, tries = 4): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const transient = /fetch failed|socket|ECONNRESET|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|network|closed/i.test(
+        String(err?.cause?.code ?? err?.code ?? err?.message ?? err)
+      );
+      if (!transient || i >= tries) throw err;
+      console.log(`  …transient error on ${label} (attempt ${i}), retrying`);
+      await sleep(2000 * i);
+    }
+  }
+}
+
 function orderList(res: unknown): any[] {
   return Array.isArray(res) ? res : ((res as any)?.results ?? (res as any)?.data ?? []);
 }
@@ -32,11 +48,11 @@ export async function hireService(
   const acceptDeadline = Date.now() + 3 * 60_000;
   let orderId: string | undefined;
   while (Date.now() < acceptDeadline) {
-    const n = await client.getNegotiation(neg.negotiationId);
+    const n = await withRetry(() => client.getNegotiation(neg.negotiationId), 'getNegotiation');
     if (n.status === 'rejected') throw new Error('provider rejected negotiation');
     if (n.status === 'expired') throw new Error('negotiation expired (provider offline?)');
     if (n.status === 'accepted') {
-      const found = orderList(await client.listOrders({ role: 'buyer', page: 1, pageSize: 50 }))
+      const found = orderList(await withRetry(() => client.listOrders({ role: 'buyer', page: 1, pageSize: 50 }), 'listOrders'))
         .find(o => o.negotiationId === neg.negotiationId);
       if (found) { orderId = found.orderId; break; }
     }
@@ -47,18 +63,18 @@ export async function hireService(
   // 2) wait for on-chain order creation to finalize (status: creating → created), then pay
   const payDeadline = Date.now() + 2 * 60_000;
   while (Date.now() < payDeadline) {
-    const o = await client.getOrder(orderId);
+    const o = await withRetry(() => client.getOrder(orderId!), 'getOrder(pay)');
     if (o.status === 'created') break;
     if (o.status === 'rejected') throw new Error('order rejected before payment');
     if (o.status === 'expired') throw new Error('order expired before payment');
     await sleep(2000);
   }
-  await client.payOrder(orderId);   // escrow locks in CAPVault
+  await withRetry(() => client.payOrder(orderId!), 'payOrder');   // escrow locks in CAPVault (idempotent)
 
   // 3) poll to settlement
   const completeDeadline = Date.now() + slaMinutes * 60_000 + AWARD_TIMEOUT_GRACE_MS;
   while (Date.now() < completeDeadline) {
-    const o = await client.getOrder(orderId);
+    const o = await withRetry(() => client.getOrder(orderId!), 'getOrder(settle)');
     if (o.status === 'completed') {
       const d = await client.getDelivery(orderId);
       return {
