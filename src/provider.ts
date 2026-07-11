@@ -37,6 +37,18 @@ async function main() {
   const stream = await client.connectWebSocket();
   console.log('🔨 Haggle provider online — waiting for jobs');
 
+  // Cloud platforms overlap old+new containers on deploy; the old container still
+  // holds the CROO socket, so the new one is kicked with a "duplicate key" policy
+  // violation that the SDK treats as permanent (it sets stream.error and never
+  // reconnects). Watchdog: when that happens, exit — the platform restarts us and
+  // the retry lands after the old container has drained, connecting cleanly.
+  setInterval(() => {
+    if ((stream as any).error) {
+      console.error('websocket permanently closed (duplicate key) — exiting for clean platform restart');
+      process.exit(1);
+    }
+  }, 15_000);
+
   stream.on(EventType.NegotiationCreated, async (e: any) => {
     console.log(`New negotiation ${e.negotiation_id}`);
     try {
