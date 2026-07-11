@@ -26,6 +26,14 @@ function parseJob(requirements: string): JobRequest {
 }
 
 async function main() {
+  // On a cloud host (Railway/Render/Fly), bind PORT so the platform sees the
+  // process as healthy and keeps this long-lived WebSocket worker alive.
+  if (process.env.PORT) {
+    const { createServer } = await import('node:http');
+    createServer((_req, res) => { res.writeHead(200); res.end('haggle provider online'); })
+      .listen(Number(process.env.PORT), () => console.log(`health server on :${process.env.PORT}`));
+  }
+
   const stream = await client.connectWebSocket();
   console.log('🔨 Haggle provider online — waiting for jobs');
 
