@@ -19,8 +19,8 @@
       "category": "verification",
       "listPriceUsdc": 0.1,
       "slaMinutes": 15,
-      "storeUrl": "https://agent.croo.network/agents/c48d4feb-e646-4732-84b0-0d361c59884d",
-      "_todo": "confirm price + service name on store page"
+      "confirmedLive": true,
+      "storeUrl": "https://agent.croo.network/agents/c48d4feb-e646-4732-84b0-0d361c59884d"
     },
     {
       "serviceId": "FILL_ME",

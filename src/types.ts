@@ -12,6 +12,10 @@ export interface RegistryEntry {
   /** If the team runs a haggle-bidder RFQ quote service, its serviceId. */
   quoteServiceId?: string;
   quotePriceUsdc?: number;
+  /** Set once a live probe confirmed the provider is accepting orders. */
+  confirmedLive?: boolean;
+  /** Exact requirements schema for this agent; use "$task" to inject the job task. */
+  requirementsTemplate?: Record<string, string>;
 }
 
 export interface JobRequest {

@@ -13,5 +13,8 @@ export function loadRegistry(path = 'registry/registry.json'): RegistryEntry[] {
 }
 
 export function candidatesFor(entries: RegistryEntry[], category: string, budgetUsdc: number): RegistryEntry[] {
-  return entries.filter(e => e.category === category && e.listPriceUsdc <= budgetUsdc);
+  return entries
+    .filter(e => e.category === category && e.listPriceUsdc <= budgetUsdc)
+    // prefer agents we've confirmed reachable, then cheaper
+    .sort((a, b) => Number(b.confirmedLive ?? false) - Number(a.confirmedLive ?? false) || a.listPriceUsdc - b.listPriceUsdc);
 }

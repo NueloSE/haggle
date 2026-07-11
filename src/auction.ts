@@ -1,17 +1,24 @@
-import { AgentClient, DeliverableType, EventType } from '@croo-network/sdk';
+import { AgentClient, DeliverableType } from '@croo-network/sdk';
 import { randomUUID } from 'node:crypto';
 import type { Bid, JobRequest, AuctionReceipt, RegistryEntry } from './types.js';
 import { loadRegistry, candidatesFor } from './registry.js';
 import { MAX_USDC_PER_JOB } from './config.js';
 
 const RFQ_BUDGET_FRACTION = 0.15;      // never spend more than 15% of a job budget on quotes
-const AWARD_TIMEOUT_GRACE_MS = 60_000; // extra wait beyond provider SLA before re-routing
+const AWARD_TIMEOUT_GRACE_MS = 60_000; // extra wait beyond provider SLA before giving up
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+function orderList(res: unknown): any[] {
+  return Array.isArray(res) ? res : ((res as any)?.results ?? (res as any)?.data ?? []);
+}
 
 /**
- * Hire one service end-to-end as a requester:
- * negotiate → (order_created) → pay → (order_completed | timeout) → getDelivery.
- * Resolves with the delivery text/schema, or throws on rejection/expiry.
- * Escrow refunds on SLA expiry are enforced on-chain — a timeout costs nothing.
+ * Hire one service end-to-end as a requester, by REST polling (not a second
+ * WebSocket): negotiate → wait for provider to accept → pay → poll to completion
+ * → getDelivery. Polling avoids opening a second socket on an agent key whose
+ * provider socket is already live (which drops events). Escrow refunds on
+ * rejection/SLA-expiry are enforced on-chain, so a failed hire never loses funds.
  */
 export async function hireService(
   client: AgentClient,
@@ -19,50 +26,69 @@ export async function hireService(
   requirements: string,
   slaMinutes: number
 ): Promise<{ orderId: string; deliverable: string }> {
-  const stream = await client.connectWebSocket();
-  try {
-    const neg = await client.negotiateOrder({ serviceId, requirements });
+  const neg = await client.negotiateOrder({ serviceId, requirements });
 
-    const orderId = await new Promise<string>((resolve, reject) => {
-      const t = setTimeout(() => reject(new Error(`negotiation timeout for ${serviceId}`)), 5 * 60_000);
-      stream.on(EventType.OrderCreated, async (e: any) => {
-        try {
-          clearTimeout(t);
-          await client.payOrder(e.order_id);
-          resolve(e.order_id);
-        } catch (err) { reject(err); }
-      });
-      stream.on(EventType.NegotiationRejected, (e: any) => {
-        if (e.negotiation_id === neg.negotiationId) { clearTimeout(t); reject(new Error('negotiation rejected')); }
-      });
-      stream.on(EventType.NegotiationExpired, (e: any) => {
-        if (e.negotiation_id === neg.negotiationId) { clearTimeout(t); reject(new Error('negotiation expired')); }
-      });
-    });
-
-    const deliverable = await new Promise<string>((resolve, reject) => {
-      const t = setTimeout(
-        () => reject(new Error(`SLA timeout on order ${orderId} (escrow auto-refunds)`)),
-        slaMinutes * 60_000 + AWARD_TIMEOUT_GRACE_MS
-      );
-      stream.on(EventType.OrderCompleted, async (e: any) => {
-        if (e.order_id !== orderId) return;
-        clearTimeout(t);
-        const d = await client.getDelivery(orderId);
-        resolve(d.deliverableType === DeliverableType.Schema ? d.deliverableSchema : d.deliverableText);
-      });
-      stream.on(EventType.OrderRejected, (e: any) => {
-        if (e.order_id === orderId) { clearTimeout(t); reject(new Error('order rejected by provider (escrow refunded)')); }
-      });
-      stream.on(EventType.OrderExpired, (e: any) => {
-        if (e.order_id === orderId) { clearTimeout(t); reject(new Error('order expired (escrow refunded)')); }
-      });
-    });
-
-    return { orderId, deliverable };
-  } finally {
-    stream.close();
+  // 1) wait for the provider to accept → an order appears for this negotiation
+  const acceptDeadline = Date.now() + 3 * 60_000;
+  let orderId: string | undefined;
+  while (Date.now() < acceptDeadline) {
+    const n = await client.getNegotiation(neg.negotiationId);
+    if (n.status === 'rejected') throw new Error('provider rejected negotiation');
+    if (n.status === 'expired') throw new Error('negotiation expired (provider offline?)');
+    if (n.status === 'accepted') {
+      const found = orderList(await client.listOrders({ role: 'buyer', page: 1, pageSize: 50 }))
+        .find(o => o.negotiationId === neg.negotiationId);
+      if (found) { orderId = found.orderId; break; }
+    }
+    await sleep(2500);
   }
+  if (!orderId) throw new Error('provider never accepted (not accepting orders)');
+
+  // 2) wait for on-chain order creation to finalize (status: creating → created), then pay
+  const payDeadline = Date.now() + 2 * 60_000;
+  while (Date.now() < payDeadline) {
+    const o = await client.getOrder(orderId);
+    if (o.status === 'created') break;
+    if (o.status === 'rejected') throw new Error('order rejected before payment');
+    if (o.status === 'expired') throw new Error('order expired before payment');
+    await sleep(2000);
+  }
+  await client.payOrder(orderId);   // escrow locks in CAPVault
+
+  // 3) poll to settlement
+  const completeDeadline = Date.now() + slaMinutes * 60_000 + AWARD_TIMEOUT_GRACE_MS;
+  while (Date.now() < completeDeadline) {
+    const o = await client.getOrder(orderId);
+    if (o.status === 'completed') {
+      const d = await client.getDelivery(orderId);
+      return {
+        orderId,
+        deliverable: d.deliverableType === DeliverableType.Schema ? d.deliverableSchema : d.deliverableText,
+      };
+    }
+    if (o.status === 'rejected') throw new Error('order rejected by provider (escrow refunded)');
+    if (o.status === 'expired') throw new Error('order expired (escrow refunded)');
+    await sleep(3000);
+  }
+  throw new Error(`SLA timeout on order ${orderId} (escrow auto-refunds)`);
+}
+
+/**
+ * Downstream agents each define their own requirements schema. Since Haggle hires
+ * arbitrary agents, it sends a JSON envelope populating the common field names so
+ * most schemas find what they expect. A per-registry `requirementsTemplate` can
+ * override this when an agent's exact schema is known.
+ */
+function buildRequirements(job: JobRequest, entry: RegistryEntry): string {
+  if (entry.requirementsTemplate) {
+    return JSON.stringify(
+      Object.fromEntries(Object.entries(entry.requirementsTemplate).map(([k, v]) => [k, v === '$task' ? job.task : v]))
+    );
+  }
+  return JSON.stringify({
+    task: job.task, claim: job.task, text: job.task, query: job.task,
+    input: job.task, content: job.task, category: job.category,
+  });
 }
 
 /** RFQ round: paid micro-orders to quote-capable candidates; list price is the sealed bid for the rest. */
@@ -133,11 +159,15 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
   let winner: Bid | null = null;
   for (const bid of bids.slice(0, 3)) {
     try {
-      awarded = await hireService(client, bid.entry.serviceId, job.task, bid.entry.slaMinutes);
+      console.log(`  award attempt → ${bid.entry.teamName} (${bid.entry.serviceName}) @ ${bid.bidUsdc} USDC`);
+      awarded = await hireService(client, bid.entry.serviceId, buildRequirements(job, bid.entry), bid.entry.slaMinutes);
+      console.log(`  ✅ ${bid.entry.teamName} delivered (order ${awarded.orderId})`);
       winner = bid;
       break;
     } catch (err) {
-      notes.push(`re-route: ${bid.entry.teamName} failed (${(err as Error).message})`);
+      const msg = (err as any)?.reason ?? (err as Error).message;
+      console.log(`  ✗ ${bid.entry.teamName} failed: ${msg}`);
+      notes.push(`re-route: ${bid.entry.teamName} failed (${msg})`);
     }
   }
   if (!awarded || !winner) throw new Error('all top bidders failed — job aborted, buyer will be refunded');
