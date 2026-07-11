@@ -42,7 +42,7 @@ export async function hireService(
   requirements: string,
   slaMinutes: number
 ): Promise<{ orderId: string; deliverable: string }> {
-  const neg = await client.negotiateOrder({ serviceId, requirements });
+  const neg = await withRetry(() => client.negotiateOrder({ serviceId, requirements }), 'negotiateOrder', 6);
 
   // 1) wait for the provider to accept → an order appears for this negotiation
   const acceptDeadline = Date.now() + 3 * 60_000;
@@ -76,7 +76,7 @@ export async function hireService(
   while (Date.now() < completeDeadline) {
     const o = await withRetry(() => client.getOrder(orderId!), 'getOrder(settle)');
     if (o.status === 'completed') {
-      const d = await client.getDelivery(orderId);
+      const d = await withRetry(() => client.getDelivery(orderId!), 'getDelivery');
       return {
         orderId,
         deliverable: d.deliverableType === DeliverableType.Schema ? d.deliverableSchema : d.deliverableText,
@@ -173,6 +173,7 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
   // Award with re-route: try winner, then runner-up, then third.
   let awarded: { orderId: string; deliverable: string } | null = null;
   let winner: Bid | null = null;
+  const offlineTeams = new Set<string>();
   for (const bid of bids.slice(0, 3)) {
     try {
       console.log(`  award attempt → ${bid.entry.teamName} (${bid.entry.serviceName}) @ ${bid.bidUsdc} USDC`);
@@ -183,6 +184,7 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
     } catch (err) {
       const msg = (err as any)?.reason ?? (err as Error).message;
       console.log(`  ✗ ${bid.entry.teamName} failed: ${msg}`);
+      offlineTeams.add(bid.entry.teamName);
       notes.push(`re-route: ${bid.entry.teamName} failed (${msg})`);
     }
   }
@@ -223,8 +225,12 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
     }
   }
 
-  const mean = bids.reduce((s, b) => s + b.bidUsdc, 0) / bids.length;
-  const max = Math.max(...bids.map(b => b.bidUsdc));
+  const liveBids = bids.filter(b => !offlineTeams.has(b.entry.teamName));
+  if (offlineTeams.size) notes.push(`offline bidders excluded from savings: ${[...offlineTeams].join(', ')}`);
+  if (liveBids.length <= 1) notes.push('winner was the only reachable bidder — savings reported as 0');
+  const basis = liveBids.length > 1 ? liveBids : [];
+  const mean = basis.length ? basis.reduce((s, b) => s + b.bidUsdc, 0) / basis.length : winner.bidUsdc;
+  const max = basis.length ? Math.max(...basis.map(b => b.bidUsdc)) : winner.bidUsdc;
   const rfqSpend = bids.filter(b => b.source === 'rfq').reduce((s, b) => s + (b.entry.quotePriceUsdc ?? 0.01), 0);
 
   const receipt: AuctionReceipt = {
@@ -238,6 +244,7 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
       service: b.entry.serviceName,
       bidUsdc: b.bidUsdc,
       source: b.source,
+      status: b === winner ? 'won' : offlineTeams.has(b.entry.teamName) ? 'offline' : 'lost',
       score: Number((b.score ?? 0).toFixed(4)),
       rfqOrderId: b.rfqOrderId,
     })),

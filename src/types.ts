@@ -50,6 +50,7 @@ export interface AuctionReceipt {
     service: string;
     bidUsdc: number;
     source: string;
+    status: 'won' | 'offline' | 'lost';
     score: number;
     rfqOrderId?: string;
   }>;
