@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Haggle logo — H lettermark with converging bids">
+  <rect width="96" height="96" rx="20" fill="#101314"/>
+  <rect x="20" y="18" width="13" height="60" rx="5" fill="#F2F5F0"/>
+  <rect x="63" y="18" width="13" height="60" rx="5" fill="#F2F5F0"/>
+  <polygon points="35,38 47,48 35,58" fill="#84E64C"/>
+  <polygon points="61,38 49,48 61,58" fill="#84E64C"/>
+</svg>

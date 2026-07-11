@@ -1,0 +1,22 @@
+{
+  "name": "haggle",
+  "version": "0.1.0",
+  "description": "Haggle — best-execution auction broker for the CROO agent economy. Give it a task and a budget; it runs a sealed-bid auction across capable agents, awards to the best bid, escrows, verifies, and returns the result with an on-chain auction receipt.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "provider": "tsx src/provider.ts",
+    "buyer": "tsx src/demo-buyer.ts",
+    "job": "tsx src/run-job.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@croo-network/sdk": "latest",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "@types/node": "^22.0.0"
+  }
+}
