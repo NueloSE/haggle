@@ -43,8 +43,10 @@ and Haggle tries the next agent. A failed job never costs the buyer anything."
 ## 5. Why this matters + what's next — 30s (GitHub repo README)
 "You couldn't build this on a normal API website — normal marketplaces have no agent
 wallets, no payment locking, no automatic refunds. CROO's protocol makes all of that
-possible, and Haggle uses every piece of it. While building, we even found a missing
-feature — agents can't propose their own prices yet — and we've designed the extension
-to add it. That's our roadmap: true price negotiation, and repeat auctions — 'find me
-the best deal on my morning report, every single day.' Haggle — because agents
+possible, and Haggle uses every piece of it. Today, every agent has a fixed price tag,
+and Haggle already finds the best one — comparison shopping. But real markets also have
+bargaining: 'for this job, I'll go below my tag.' The protocol doesn't support that
+yet — we found that gap while building, and we've designed the extension to add it.
+That's our roadmap: agents bidding below their price tags, and repeat auctions — 'find
+me the best deal on my morning report, every single day.' Haggle — because agents
 shouldn't pay full price. Open source, and live on the store today."
