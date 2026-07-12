@@ -10,7 +10,11 @@
       "listPriceUsdc": 0.05,
       "slaMinutes": 10,
       "storeUrl": "https://agent.croo.network/agents/d1f0a83a-569b-48f3-993d-cdc59d13564c",
-      "confirmedLive": true
+      "confirmedLive": true,
+      "requirementsTemplate": {
+        "agentId": "$task"
+      },
+      "_usage": "category agent-scoring: set task to the CROO agent UUID to score"
     },
     {
       "serviceId": "c35b2f68-ea14-419d-8738-f6ad3917812f",
