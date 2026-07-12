@@ -2,8 +2,9 @@
 
 Record with QuickTime (File → New Screen Recording) + your voice. Talk like you're
 explaining to a friend; one take is fine. Open these tabs before you start:
-1. CROO store homepage  2. haggle's store page  3. My Orders with a COMPLETED
-run_auction expanded  4. basescan (click VIEW TX when you get there)  5. GitHub repo.
+1. CROO store homepage  2. haggle's store page  3. My Orders — the COMPLETED
+run_auction from today (the USDC fact-check, ~$0.31, LOCK → DELIVER → CLEAR)
+expanded with both JSON boxes ready to open  4. GitHub repo README.
 
 ## 1. The problem — 30s (store homepage)
 "This is the CROO Agent Store — a marketplace where AI agents sell their services.
@@ -13,32 +14,38 @@ negotiates. Imagine a market where bargaining doesn't exist — that's the gap.
 Our agent, Haggle, brings bargaining to the agent economy."
 
 ## 2. What Haggle is — 30s (haggle's store page: LIVE badge, stats)
-"Haggle is our agent — live on the store right now. Think of it as a smart middleman.
-You give it a job and a budget — for example: 'fact-check this claim, here's fifty
-cents.' Haggle finds every agent that can do the job, compares their prices, their
-track record, and their speed — like collecting quotes from different workers — picks
-the best deal, hires that agent, checks the work, and brings you the result, together
-with a receipt showing exactly what happened."
+"Haggle is our agent — live on the store right now, running around the clock in the
+cloud. Think of it as a smart middleman. You give it a job and a budget — for example:
+'fact-check a claim about a token, here's thirty cents.' Haggle finds every agent that
+can do the job, compares their prices, their track record, and their speed — like
+collecting quotes from different workers — picks the best deal, hires that agent,
+checks the work, and brings you the result, together with a receipt showing exactly
+what happened."
 
-## 3. A real order — 60–90s (My Orders → expand the completed run_auction)
-"This is not a mockup — here's a real job that ran on the blockchain. Look at the
-timeline. First: the buyer's money was locked in a safe. Nobody can touch it until
-the work is delivered. Then: the work was delivered. Then: the money was released to
-Haggle. Now the interesting part — inside this job, Haggle went shopping on its own.
-It tried the cheapest worker first — that agent was offline — so it automatically
-moved to the next best one, an agent built by a completely different team, paid it
-from its own wallet, and collected the finished work. All inside one order, with no
-human involved."
-— click VIEW TX, show basescan —
-"And every step is recorded on the blockchain, where anyone can verify it."
+## 3. A real order — 60–90s (My Orders → the expanded USDC fact-check order)
+"This is a real job that ran this morning, settled on the blockchain. I asked Haggle
+to fact-check a claim about the USDC token on Base — here it is in the requirements.
+Now look at the timeline. First: my thirty cents was locked in a safe — nobody can
+touch it until the work is delivered. Then: delivered. Then: released to Haggle.
+And inside this job, Haggle went shopping on its own — it found a specialist
+fact-checking agent built by a completely different team, hired it, and paid it ten
+cents from its own wallet."
+— open the DELIVER RESULT JSON, scroll slowly through the findings —
+"Here's what came back: a full on-chain safety report. Contract verified. No scam
+mechanics — a hundred out of a hundred. Over nine million holders. Every number
+comes from a named data source, and the report carries a cryptographic attestation
+recorded on Base. You can click VIEW TX on any step and see the transaction on the
+blockchain yourself."
 
-## 4. The receipt — 45s (the receipt JSON — in the order's Deliver Result, or terminal)
-"Every buyer gets this receipt. It lists every agent that competed, the price each
-one offered, who was offline, who won, and exactly what was spent. And it's honest:
-when only one worker was available, the receipt says plainly — no savings this time,
-and here's why — instead of showing fake numbers. One more protection: if a hired
-agent fails to deliver on time, the locked money automatically returns to the buyer
-and Haggle tries the next agent. A failed job never costs the buyer anything."
+## 4. The receipt — 45s (scroll to the "receipt" section of the same JSON)
+"And this is Haggle's receipt — every buyer gets one. It shows every agent that
+competed, the price each one offered, who won, and exactly what was spent. Notice
+the honesty: only one capable worker was reachable for this job, so the receipt says
+plainly — savings: zero, and here's why — instead of showing fake numbers. Earlier
+today, an agent even delivered a broken answer and still took payment — Haggle now
+detects that, writes off the cost on the receipt, and automatically moves to the next
+best agent. And if a hired agent misses its deadline entirely, the locked money
+returns to the buyer automatically. A failed job never costs the buyer anything."
 
 ## 5. Why this matters + what's next — 30s (GitHub repo README)
 "You couldn't build this on a normal API website — normal marketplaces have no agent
