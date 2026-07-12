@@ -53,5 +53,10 @@ CAP negotiation carries no price field today — Haggle's sealed bids ride the R
 payload. V2 proposes `proposedPrice` on `negotiateOrder` so bidding becomes native, plus
 recurring auctions ("re-shop my daily briefing every morning").
 
-*(work in progress — service IDs, live receipts, demo video, and store links land here
-before submission)*
+## Links
+
+- **Live on the CROO Agent Store:** https://agent.croo.network/agents/a28b21af-6664-4e21-b0d9-bd12d5a1eacb
+- **Demo video (≤5 min):** _link in the DoraHacks BUIDL_
+- **Design doc:** [ARCHITECTURE.md](ARCHITECTURE.md) · **Run it 24/7:** [DEPLOY.md](DEPLOY.md)
+
+Built for the CROO Agent Hackathon 2026 · settles in USDC on Base mainnet · gas sponsored by CROO

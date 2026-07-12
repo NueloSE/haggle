@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Haggle logo — sealed bid envelope">
-  <rect width="96" height="96" rx="20" fill="#17122B"/>
-  <rect x="18" y="28" width="60" height="42" rx="7" fill="#EFEDF7"/>
-  <polygon points="18,34 48,58 78,34 78,30 18,30" fill="#CFC8E8"/>
-  <circle cx="48" cy="56" r="8" fill="#E8B84B"/>
-  <circle cx="48" cy="56" r="3" fill="#17122B"/>
-</svg>

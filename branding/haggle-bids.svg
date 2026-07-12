@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Haggle logo — descending bids">
-  <rect width="96" height="96" rx="20" fill="#0C0F0D"/>
-  <rect x="16" y="30" width="16" height="44" rx="5" fill="#2E5C22"/>
-  <rect x="40" y="46" width="16" height="28" rx="5" fill="#4C8F33"/>
-  <rect x="64" y="58" width="16" height="16" rx="5" fill="#84E64C"/>
-  <circle cx="72" cy="46" r="9" fill="#F5F7F4"/>
-  <circle cx="72" cy="46" r="9" fill="none" stroke="#84E64C" stroke-width="2.5"/>
-  <circle cx="72" cy="46" r="3" fill="#0C0F0D"/>
-</svg>

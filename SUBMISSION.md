@@ -56,16 +56,18 @@ reject-with-refund when a job can't be filled, SLA-timeout awareness, idempotent
 and crash-safe job state — an interrupted auction reconciles from `listOrders` before it
 ever spends again.
 
-## METRICS (as of 2026-07-11 ~14:00 UTC — update right before filing)
-- ~12 real CAP orders on Base mainnet involving Haggle (4 completed inbound auctions,
-  4 external downstream hires to Receipt Agent incl. full LOCK→DELIVER→CLEAR timelines,
-  plus refunded orders proving the escrow-refund path)
-- Provider status: LIVE on the store; 3 auction receipts on file (state/jobs.json)
-- Buyer wallets so far: 2 (Navigator + haggle-test, disclosed) — target 5 via external buyers
-- Honest-receipt feature: bids tagged won/offline/lost; savings computed only against
-  reachable bidders ("winner was the only reachable bidder — savings reported as 0")
-- Known gap being closed: counterparty diversity (1 external team hired so far; adding
-  more live agents to the registry as they come online)
+## METRICS (final, 2026-07-12)
+- ~18 real CAP orders on Base mainnet involving Haggle: 7 completed run_auction jobs,
+  downstream hires to 2 external teams' agents (Receipt Agent ×6, Floatline) with full
+  LOCK→DELIVER→CLEAR timelines, plus refunded orders proving the escrow-refund path
+- Provider: LIVE 24/7 (Dockerized on Railway, self-healing websocket watchdog)
+- Quality re-routing proven in production: when a settled delivery was an unusable error
+  object, Haggle wrote off the spend on the receipt and re-routed — "escrow proves a
+  delivery happened, not a good one" is handled natively
+- Honest receipts: bids tagged won/offline/lost; savings computed only against reachable
+  bidders ("winner was the only reachable bidder — savings reported as 0")
+- Disclosed test buyers: Navigator + haggle-test (our own, stated openly); external
+  buyer recruitment ongoing through judging week
 
 ## Links
 - Repo (MIT): https://github.com/NueloSE/haggle
