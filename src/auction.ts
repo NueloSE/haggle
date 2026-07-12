@@ -30,6 +30,25 @@ function orderList(res: unknown): any[] {
 }
 
 /**
+ * Escrow proves a delivery happened — not a good one. Some providers deliver an
+ * error object (wrong input schema, internal failure) and still settle. Detect the
+ * obvious cases so the auction re-routes to the runner-up instead of passing junk
+ * to the buyer.
+ */
+export function isJunkDelivery(deliverable: string): string | null {
+  if (!deliverable || deliverable.trim().length < 10) return 'empty delivery';
+  try {
+    const d = JSON.parse(deliverable);
+    if (d && typeof d === 'object' && !Array.isArray(d)) {
+      if (d.approved === false || d.error || d.err) {
+        return `provider returned an error object (${d.error ?? d.err ?? 'approved:false'})`;
+      }
+    }
+  } catch { /* plain-text deliverable — fine */ }
+  return null;
+}
+
+/**
  * Hire one service end-to-end as a requester, by REST polling (not a second
  * WebSocket): negotiate → wait for provider to accept → pay → poll to completion
  * → getDelivery. Polling avoids opening a second socket on an agent key whose
@@ -174,11 +193,21 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
   let awarded: { orderId: string; deliverable: string } | null = null;
   let winner: Bid | null = null;
   const offlineTeams = new Set<string>();
+  let wastedUsdc = 0;
   for (const bid of bids.slice(0, 3)) {
     try {
       console.log(`  award attempt → ${bid.entry.teamName} (${bid.entry.serviceName}) @ ${bid.bidUsdc} USDC`);
-      awarded = await hireService(client, bid.entry.serviceId, buildRequirements(job, bid.entry), bid.entry.slaMinutes);
-      console.log(`  ✅ ${bid.entry.teamName} delivered (order ${awarded.orderId})`);
+      const attempt = await hireService(client, bid.entry.serviceId, buildRequirements(job, bid.entry), bid.entry.slaMinutes);
+      const junk = isJunkDelivery(attempt.deliverable);
+      if (junk) {
+        // delivery settled on-chain but is unusable — count the cost, re-route
+        wastedUsdc += bid.bidUsdc;
+        console.log(`  ✗ ${bid.entry.teamName} delivered junk: ${junk} — re-routing`);
+        notes.push(`quality re-route: ${bid.entry.teamName} settled but delivered junk (${junk}); ${bid.bidUsdc} USDC written off`);
+        continue;
+      }
+      awarded = attempt;
+      console.log(`  ✅ ${bid.entry.teamName} delivered (order ${attempt.orderId})`);
       winner = bid;
       break;
     } catch (err) {
@@ -189,10 +218,6 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
     }
   }
   if (!awarded || !winner) throw new Error('all top bidders failed — job aborted, buyer will be refunded');
-
-  if (!awarded.deliverable || awarded.deliverable.trim().length < 10) {
-    notes.push('warning: deliverable suspiciously short');
-  }
 
   // Optional: procure an independent audit of the delivery from a DIFFERENT team's
   // verification agent — Haggle buys trust from the market rather than judging itself.
@@ -256,7 +281,7 @@ export async function runAuction(client: AgentClient, job: JobRequest): Promise<
     },
     awardOrderId: awarded.orderId,
     verification,
-    totalSpentUsdc: Number((winner.bidUsdc + rfqSpend + (verification?.costUsdc ?? 0)).toFixed(4)),
+    totalSpentUsdc: Number((winner.bidUsdc + rfqSpend + wastedUsdc + (verification?.costUsdc ?? 0)).toFixed(4)),
     savedVsMaxBidPct: Number((((max - winner.bidUsdc) / max) * 100).toFixed(1)),
     savedVsMeanBidPct: Number((((mean - winner.bidUsdc) / mean) * 100).toFixed(1)),
     startedAt,
