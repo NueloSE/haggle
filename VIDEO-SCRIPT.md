@@ -1,42 +1,50 @@
-# Haggle demo video — shot-by-shot (target: 3.5–4 min, max 5)
+# Haggle demo video — simple script (3.5–4 min, max 5)
 
-Record with QuickTime (File → New Screen Recording) + your voice. One take is fine;
-judges score clarity, not production value. Have these open in tabs before recording:
-haggle's store page, My Orders (a COMPLETED run_auction expanded), basescan tab,
-terminal with provider log, GitHub repo.
+Record with QuickTime (File → New Screen Recording) + your voice. Talk like you're
+explaining to a friend; one take is fine. Open these tabs before you start:
+1. CROO store homepage  2. haggle's store page  3. My Orders with a COMPLETED
+run_auction expanded  4. basescan (click VIEW TX when you get there)  5. GitHub repo.
 
-## 1. The problem — 30s (face the store homepage)
-"This is the CROO Agent Store — over a hundred agents, every one with a fixed price.
-Every buyer here pays list price to the first agent they find. Every orchestrator in
-this hackathon hires at list price from a fixed list. The one thing every real economy
-runs on is missing: price competition. Haggle fixes that."
+## 1. The problem — 30s (store homepage)
+"This is the CROO Agent Store — a marketplace where AI agents sell their services.
+There are over a hundred agents here, and every one has a fixed price tag. So today,
+everyone simply pays whatever the first agent asks. Nobody compares prices. Nobody
+negotiates. Imagine a market where bargaining doesn't exist — that's the gap.
+Our agent, Haggle, brings bargaining to the agent economy."
 
-## 2. What haggle is — 30s (haggle's store page: LIVE badge, stats, run_auction)
-"Haggle is a broker agent, live on the store. You pay it thirty cents, give it a task,
-a category, and a budget. It runs a sealed-bid auction across capable agents — each
-agent's price is its bid — scores price, reputation, and SLA, hires the winner with
-escrowed USDC, verifies the delivery, and hands you the result plus a receipt of the
-entire auction."
+## 2. What Haggle is — 30s (haggle's store page: LIVE badge, stats)
+"Haggle is our agent — live on the store right now. Think of it as a smart middleman.
+You give it a job and a budget — for example: 'fact-check this claim, here's fifty
+cents.' Haggle finds every agent that can do the job, compares their prices, their
+track record, and their speed — like collecting quotes from different workers — picks
+the best deal, hires that agent, checks the work, and brings you the result, together
+with a receipt showing exactly what happened."
 
-## 3. Live order — 60–90s (My Orders → expand the completed run_auction)
-"Here's a real one, settled on Base mainnet." — point at the CAP timeline —
-"Escrow locked. Delivered. Cleared — thirty cents settled to haggle. And inside this
-job, haggle itself went shopping: it tried the cheapest bidder, Floatline — offline —
-re-routed automatically to Receipt Agent, a completely different team's agent, paid it
-ten cents into escrow, got the delivery verified, all inside one auction."
-Click VIEW TX → basescan. "Every step is an on-chain transaction anyone can audit."
+## 3. A real order — 60–90s (My Orders → expand the completed run_auction)
+"This is not a mockup — here's a real job that ran on the blockchain. Look at the
+timeline. First: the buyer's money was locked in a safe. Nobody can touch it until
+the work is delivered. Then: the work was delivered. Then: the money was released to
+Haggle. Now the interesting part — inside this job, Haggle went shopping on its own.
+It tried the cheapest worker first — that agent was offline — so it automatically
+moved to the next best one, an agent built by a completely different team, paid it
+from its own wallet, and collected the finished work. All inside one order, with no
+human involved."
+— click VIEW TX, show basescan —
+"And every step is recorded on the blockchain, where anyone can verify it."
 
-## 4. The receipt — 45s (terminal: cat state/jobs.json, or the JSON in Deliver Result)
-"This is the auction receipt every buyer gets: every bidder, every bid, who was offline,
-who won, what was spent — and the savings math is honest: if the winner was the only
-reachable bidder, it says savings zero, and tells you why. When an agent misses its SLA,
-escrow refunds automatically and haggle re-routes to the runner-up — a failed delivery
-costs the buyer nothing."
+## 4. The receipt — 45s (the receipt JSON — in the order's Deliver Result, or terminal)
+"Every buyer gets this receipt. It lists every agent that competed, the price each
+one offered, who was offline, who won, and exactly what was spent. And it's honest:
+when only one worker was available, the receipt says plainly — no savings this time,
+and here's why — instead of showing fake numbers. One more protection: if a hired
+agent fails to deliver on time, the locked money automatically returns to the buyer
+and Haggle tries the next agent. A failed job never costs the buyer anything."
 
-## 5. Why this needs CAP + roadmap — 30s (GitHub repo README)
-"None of this works on a normal API marketplace — no wallets, no escrow, no refunds, no
-per-call hiring between strangers. On CAP, price discovery becomes a protocol primitive.
-One thing we found building this: CAP negotiation has no price field yet — so our bids
-ride the RFQ payload. Our roadmap: a proposedPrice extension to make bidding native,
-and recurring auctions — re-shop my daily briefing every morning. Haggle — agents
-shouldn't shop at list price. MIT licensed, live on the store today."
+## 5. Why this matters + what's next — 30s (GitHub repo README)
+"You couldn't build this on a normal API website — normal marketplaces have no agent
+wallets, no payment locking, no automatic refunds. CROO's protocol makes all of that
+possible, and Haggle uses every piece of it. While building, we even found a missing
+feature — agents can't propose their own prices yet — and we've designed the extension
+to add it. That's our roadmap: true price negotiation, and repeat auctions — 'find me
+the best deal on my morning report, every single day.' Haggle — because agents
+shouldn't pay full price. Open source, and live on the store today."
